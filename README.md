@@ -8,13 +8,10 @@
 <p>
   Every message gets scored against your goal. When the other person texts, gpt-6-astra drafts three replies and Jev ranks them by how likely they are to move the conversation where you want it.
 </p>
-<p>
-  <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-20%2B-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="Node 20+"></a>
-  <a href="package.json"><img src="https://img.shields.io/badge/dependencies-0-blue?style=for-the-badge" alt="Zero dependencies"></a>
-  <a href="https://typesafe.ai"><img src="https://img.shields.io/badge/judge-jev-E551BA?style=for-the-badge" alt="Jev"></a>
-  <a href="https://openai.com"><img src="https://img.shields.io/badge/drafts-gpt--6--astra-000000?style=for-the-badge" alt="gpt-6-astra"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=for-the-badge" alt="MIT License"></a>
-</p>
+
+> [!WARNING]
+> **This is AI-generated code.** The server, the UI, and this README were written by Claude Code in one sitting for a demo video. Nothing here has been reviewed for production use. Read it before you trust it, and don't point it at real people's conversations.
+
 <p>
   <a href="#how-it-works">How it works</a> •
   <a href="#run-it">Run it</a> •
@@ -23,9 +20,6 @@
   <a href="#what-jev-is-asked">What Jev is asked</a> •
   <a href="#tuning">Tuning</a>
 </p>
-
-> [!NOTE]
-> **This is AI-generated code.** The server, the UI, and this README were written by Claude Code in one sitting for a demo video. Nothing here has been reviewed for production use. Read it before you trust it, and don't point it at real people's conversations.
 
 tinderjev is a two-device demo: your Mac shows the Messages thread and the analysis panel, a phone plays the other person, and one server keeps them in sync. Two models split the work. **gpt-6-astra** only generates. **Jev** (TypeSafe's System One model) only judges, and answers with calibrated probabilities instead of prose. Every number on screen is a raw Jev answer, except the ranking chip, which blends three of them.
 
