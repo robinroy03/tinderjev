@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<title>Messages</title>
+<style>
+  :root { --blue:#1f8dff; --gray:#e9e9eb; --line:#e6e6ea; --muted:#6e6e73; font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif; }
+  * { box-sizing:border-box; }
+  html, body { height:100%; margin:0; background:#fff; color:#000; }
+  body { display:flex; flex-direction:column; }
+  .head { padding: max(10px, env(safe-area-inset-top)) 16px 8px; display:grid; grid-template-columns:50px 1fr 50px; align-items:center; border-bottom:1px solid var(--line); background:rgba(255,255,255,.92); backdrop-filter:blur(14px); }
+  .head .back { color:var(--blue); font-size:22px; }
+  .head .who { display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .head .av { width:44px; height:44px; border-radius:50%; background:linear-gradient(180deg,#c8c8cd,#9a9aa2); display:grid; place-items:center; color:#fff; font-size:18px; font-weight:600; }
+  .head .nm { font-size:11px; }
+  .head .nm::after { content:" ›"; color:var(--muted); }
+  .thread { flex:1; overflow-y:auto; padding:14px 14px 8px; display:flex; flex-direction:column; gap:6px; }
+  .row { display:flex; } .row.right { justify-content:flex-end; }
+  .b { max-width:78%; padding:8px 13px; border-radius:18px; font-size:16px; line-height:1.3; white-space:pre-wrap; word-wrap:break-word; }
+  .right .b { background:var(--blue); color:#fff; border-bottom-right-radius:5px; }
+  .left .b { background:var(--gray); color:#000; border-bottom-left-radius:5px; }
+  .composer { display:flex; align-items:flex-end; gap:8px; padding:8px 12px max(10px, env(safe-area-inset-bottom)); border-top:1px solid var(--line); }
+  .plus { width:34px; height:34px; border-radius:50%; background:#ededf0; color:#8a8a90; display:grid; place-items:center; font-size:22px; flex:none; }
+  .field { flex:1; display:flex; align-items:flex-end; border:1px solid #d9d9de; border-radius:20px; padding:5px 5px 5px 14px; }
+  .field textarea { flex:1; border:0; outline:0; font:inherit; font-size:16px; resize:none; line-height:1.3; max-height:110px; padding:3px 0; background:transparent; }
+  .field button { width:28px; height:28px; border-radius:50%; border:0; background:var(--blue); color:#fff; font-weight:800; font-size:15px; flex:none; }
+  .stamp { text-align:center; font-size:11px; color:var(--muted); margin-bottom:6px; }
+</style>
+</head>
+<body>
+  <div class="head"><div class="back">‹</div><div class="who"><div class="av">M</div><div class="nm">Me</div></div><div></div></div>
+  <div class="thread" id="thread"><div class="stamp">iMessage</div></div>
+  <div class="composer">
+    <div class="plus">+</div>
+    <div class="field"><textarea id="input" rows="1" placeholder="iMessage"></textarea><button onclick="send()">↑</button></div>
+  </div>
+<script>
+  // This page IS the other person's phone: everything sent here lands as "them".
+  let S = null;
+  const input = document.getElementById('input'), thread = document.getElementById('thread');
+  async function send() { const t = input.value.trim(); if (!t) return; input.value=''; input.style.height='auto';
+    await fetch('/api/message', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ from:'them', text:t }) }); }
+  input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+  input.addEventListener('input', () => { input.style.height='auto'; input.style.height = Math.min(110, input.scrollHeight)+'px'; });
+  function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function render() {
+    // mirrored: their own texts on the right in blue, ours on the left in gray
+    thread.innerHTML = '<div class="stamp">iMessage</div>' + S.messages.map(m => `<div class="row ${m.from==='them'?'right':'left'}"><div class="b">${esc(m.text)}</div></div>`).join('');
+    thread.scrollTop = thread.scrollHeight;
+  }
+  function connect(){ const es = new EventSource('/api/events'); es.onmessage = e => { S = JSON.parse(e.data); render(); }; es.onerror = () => { es.close(); setTimeout(connect, 1500); }; }
+  connect();
+</script>
+</body>
+</html>
