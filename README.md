@@ -1,72 +1,84 @@
-# tinderjev
+<img align="right" src="public/logo.png" alt="tinderjev logo" width="160" />
 
-> **🤖 AI-generated code.** Everything in this repo (server, UI, this README) was written by
-> Claude Code in one sitting for a demo video. It has not been reviewed for production use.
-> Read it before you trust it, and don't point it at real people's conversations.
+<h1>tinderjev</h1>
 
-**Stockfish for texting.** An iMessage-style UI where every message gets a live
-"goal probability" eval bar, and each time the other person texts you, an AI drafts
-three replies and ranks them by how likely they are to move the conversation toward
-your goal.
+<p>
+  <strong>Stockfish for texting. An iMessage UI with a live eval bar and AI-ranked next moves.</strong>
+</p>
+<p>
+  Every message gets scored against your goal. When the other person texts, gpt-6-astra drafts three replies and Jev ranks them by how likely they are to move the conversation where you want it.
+</p>
+<p>
+  <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-20%2B-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="Node 20+"></a>
+  <a href="package.json"><img src="https://img.shields.io/badge/dependencies-0-blue?style=for-the-badge" alt="Zero dependencies"></a>
+  <a href="https://typesafe.ai"><img src="https://img.shields.io/badge/judge-jev-E551BA?style=for-the-badge" alt="Jev"></a>
+  <a href="https://openai.com"><img src="https://img.shields.io/badge/drafts-gpt--6--astra-000000?style=for-the-badge" alt="gpt-6-astra"></a>
+</p>
+<p>
+  <a href="#how-it-works">How it works</a> •
+  <a href="#run-it">Run it</a> •
+  <a href="#two-screens-one-conversation">Two screens</a> •
+  <a href="#webhook">Webhook</a> •
+  <a href="#what-jev-is-asked">What Jev is asked</a> •
+  <a href="#tuning">Tuning</a>
+</p>
 
-<p align="center"><img src="public/logo.png" width="96" alt="tinderjev logo" /></p>
+> [!NOTE]
+> **This is AI-generated code.** The server, the UI, and this README were written by Claude Code in one sitting for a demo video. Nothing here has been reviewed for production use. Read it before you trust it, and don't point it at real people's conversations.
 
-Two models do the work:
+tinderjev is a two-device demo: your Mac shows the Messages thread and the analysis panel, a phone plays the other person, and one server keeps them in sync. Two models split the work. **gpt-6-astra** only generates. **Jev** (TypeSafe's System One model) only judges, and answers with calibrated probabilities instead of prose. Every number on screen is a raw Jev answer, except the ranking chip, which blends three of them.
 
-| Model | Role |
-|---|---|
-| **gpt-6-astra** (OpenAI) | Drafts 3 candidate replies. Generation only. |
-| **Jev** (TypeSafe System One) | Judges. Scores every message and ranks the candidates. Returns calibrated probabilities, not prose. |
+> _The name is what it sounds like. Tinder plus Jev._
 
-Every number on screen is a raw Jev answer, except the blue ranking chip, which is a
-weighted blend of three Jev answers (see [How scoring works](#how-scoring-works)).
+## How it works
+
+1. **They text you** from the phone page or the webhook.
+2. **Jev scores the message** against the goal. The eval bar and the goal-odds chart move.
+3. **Astra drafts three replies** if it's your turn. A burst of texts is bundled: the server waits 1.5 s for it to settle, then drafts once for all of them.
+4. **Jev judges each candidate** independently, in parallel, and they're sorted.
+5. **You pick one.** Clicking a candidate drops it into the composer. You send it yourself.
+
+Nothing runs until a goal is set. Messages that arrive before that are stored and shown, but not scored.
 
 ## Run it
 
-Node 20+ and no dependencies.
+Node 20 or newer. No install step.
 
 ```sh
 cp .env.example .env     # add your keys
 npm start                # http://localhost:3000
 ```
 
-`.env`:
-
-```
-OPENAI_API_KEY=sk-...
-TYPESAFE_API_KEY=apikey_...
-OPENAI_MODEL=gpt-6-astra
-JEV_MODEL=jev-latest
-PORT=3000
-```
-
-Nothing runs until you type a goal into **Conversation goal**. Messages arriving before
-that are stored and shown but not scored.
+| Variable | What |
+| --- | --- |
+| `OPENAI_API_KEY` | OpenAI key with access to `gpt-6-astra` |
+| `TYPESAFE_API_KEY` | TypeSafe key for Jev |
+| `OPENAI_MODEL` | Default `gpt-6-astra` |
+| `JEV_MODEL` | Default `jev-latest` |
+| `PORT` | Default `3000` |
+| `DATA_FILE` | Optional. Where the conversation persists. Default `data/state.json` |
 
 ## Two screens, one conversation
 
-The server holds a single shared conversation and pushes every change to all open
-pages over Server-Sent Events, so you can drive the demo from two devices.
+The server holds a single conversation and pushes every change to all open pages over Server-Sent Events.
 
 | URL | What it is |
-|---|---|
+| --- | --- |
 | `http://localhost:3000` | **Your Mac.** Messages on the left, the analysis panel on the right. The composer is always *you*. |
-| `http://<lan-ip>:3000/phone` | **The other person's phone.** A plain Messages thread. Anything typed there arrives as *them*. The LAN URL is printed on startup. |
+| `http://<lan-ip>:3000/phone` | **The other person's phone.** A plain Messages thread. Anything typed there arrives as *them*. The LAN URL prints on startup. |
 
-Both devices must be on the same Wi-Fi, or expose port 3000 with `ngrok http 3000` or Tailscale.
+Both devices need the same Wi-Fi, or expose port 3000 with `ngrok http 3000` or Tailscale.
 
-### The loop
+The right panel has four things:
 
-1. They text you (from the phone page or the webhook).
-2. Jev scores the message against the goal. The eval bar and the chart update.
-3. If it's your turn, Astra drafts 3 replies. If they sent a burst of texts, the server
-   waits 1.5 s for it to settle, then drafts once for the whole bundle.
-4. Jev judges each candidate independently, in parallel, and they're sorted.
-5. Click a candidate to drop it into the composer. You send it yourself.
+- **Eval bar** on the far left edge. Jev's probability that the goal will be achieved, given the whole conversation.
+- **Conversation goal.** Free text. Changing it re-scores the entire thread.
+- **Top replies.** Astra's three drafts with Jev's numbers for each. Click one to use it.
+- **Goal odds over time.** A line through the eval after every message. Blue points are yours, gray are theirs. Hover for Jev's verdict on that message.
 
 ## Webhook
 
-Any device or script can inject a message. All of these are equivalent:
+Any device or script can inject a message. These are all equivalent:
 
 ```sh
 curl "http://localhost:3000/hook?from=them&text=hey%20whats%20up"
@@ -76,49 +88,46 @@ curl -X POST http://localhost:3000/api/message -d 'from=me&text=not much, you?'
 
 `from` is `me` or `them` (default `them`). JSON, form-encoded, and query params all work.
 
-**iOS Shortcut:** one "Get Contents of URL" action, POST to `http://<mac-ip>:3000/hook`
-with a JSON body `{"from": "them", "text": <Shortcut Input>}`. Share a text to it from
-Messages and it lands in the demo.
+**iOS Shortcut.** One "Get Contents of URL" action, POST to `http://<mac-ip>:3000/hook` with the JSON body `{"from": "them", "text": <Shortcut Input>}`. Share a text to it from Messages and it lands in the demo.
 
-### Other endpoints
+### All endpoints
 
 | Method | Path | Does |
-|---|---|---|
+| --- | --- | --- |
 | GET | `/api/state` | Full state as JSON |
 | GET | `/api/events` | SSE stream of the state |
 | GET | `/api/rubric` | The five effect levels Jev scores against |
-| POST | `/api/goal` | `{goal, contact}`. Changing the goal re-scores the whole thread. |
+| POST | `/hook`, `/api/message` | Add a message |
+| POST | `/api/goal` | `{goal, contact}`. Re-scores the thread |
 | POST | `/api/undo` | Remove the last message |
 | POST | `/api/reset` | Clear the conversation, keep goal and contact |
 
-## How scoring works
+## What Jev is asked
 
-Jev is asked typed questions over structured state and answers with probabilities.
-No prompt-and-parse.
+Jev takes structured state and typed questions, and returns probabilities. There is no prompt-and-parse step.
 
-**After every message.** State is the goal, the contact's name, and the conversation
-up to and including that message.
+**After every message.** State is the goal, the contact's name, and the conversation up to and including that message. Messages are scored one at a time, in order, so a burst of fast texts still gets one verdict each.
 
 | Question | Type | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `effect` | Score, 5 levels | How did this message change the odds of the goal? Levels: Disaster, Hurts, Neutral, Helps, Big win. Returns a probability per level and a confidence. |
 | `goal_prob` | Noul | Will *me* ultimately achieve the goal? 0 to 1. **This is the eval bar and the chart.** |
 
-**For each candidate reply.** One request per candidate, run in parallel. State adds
-the candidate text.
+**For each candidate reply.** One request per candidate, run in parallel. State adds the candidate text.
 
 | Question | Type | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `effect` | Score, 5 levels | If *me* sends this next, how would it change the odds? |
 | `positive_reply` | Noul | Will they respond warmly and keep talking? Shown as "warm reply". |
 | `cringe` | Noul | Would this read as cringe, try-hard, or creepy? |
 
-**Ranking chip** = 0.6 × (effect ÷ 4) + 0.3 × positive_reply + 0.1 × (1 − cringe).
-That blend is the only number that isn't straight from Jev. Change the weights in
-`rankCandidates` in `server.js`; no re-inference needed.
+**Ranking chip** = 0.6 × (effect ÷ 4) + 0.3 × positive_reply + 0.1 × (1 − cringe). This blend is the only number on screen that isn't straight from Jev. The weights live in `rankCandidates` in `server.js` and changing them needs no re-inference.
 
-Messages are scored one at a time in order, each with only the conversation up to
-that point, so a burst of fast texts still gets one verdict per message.
+## Tuning
+
+- `BURST_QUIET_MS` in `server.js`. How long to wait after their last text before drafting.
+- The Astra system prompt in `draftCandidates`. Sets the reply style (short, lowercase-friendly, one emoji max) and the strategy mix (playful, curious, goal-directed).
+- `EFFECT_LEVELS`. The rubric Jev scores every message against.
 
 ## Layout
 
@@ -126,21 +135,12 @@ that point, so a burst of fast texts still gets one verdict per message.
 server.js          HTTP + SSE server, Jev and Astra calls, state machine
 public/index.html  Mac view: Messages pane, goal, top replies, goal-odds chart
 public/phone.html  The other person's phone
-public/logo.png    App icon (cropped from tinderjev_logo.png)
+public/logo.png    App icon, cropped from tinderjev_logo.png
 data/state.json    Persisted conversation (gitignored)
 ```
 
 State survives restarts. Delete `data/state.json` or hit Reset to start over.
 
-## Tuning
-
-- `BURST_QUIET_MS` in `server.js`: how long to wait after their last text before drafting.
-- The Astra system prompt in `draftCandidates` sets the reply style (short, lowercase-friendly,
-  one emoji max) and the strategy mix (playful, curious, goal-directed).
-- `EFFECT_LEVELS` is the rubric Jev scores every message against.
-
 ## Credits
 
-Built with [TypeSafe](https://typesafe.ai) (Jev) and OpenAI. Send icon from
-[Ionicons](https://ionic.io/ionicons). UI layout inspired by the "Social Stockfish" demo
-that went around Twitter.
+Built with [TypeSafe](https://typesafe.ai) (Jev) and OpenAI. Send icon from [Ionicons](https://ionic.io/ionicons). Layout inspired by the "Social Stockfish" demo that went around Twitter.
