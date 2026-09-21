@@ -13,6 +13,7 @@
 > **This is AI-generated code.** The server, the UI, and this README were written by Claude Code in one sitting for a demo video. Nothing here has been reviewed for production use. Read it before you trust it, and don't point it at real people's conversations.
 
 <p>
+  <a href="https://x.com/_RobinRoy/status/2102147843352146001"><strong>▶ Watch the demo</strong></a> •
   <a href="#how-it-works">How it works</a> •
   <a href="#run-it">Run it</a> •
   <a href="#two-screens-one-conversation">Two screens</a> •
