@@ -13,6 +13,7 @@
   <a href="package.json"><img src="https://img.shields.io/badge/dependencies-0-blue?style=for-the-badge" alt="Zero dependencies"></a>
   <a href="https://typesafe.ai"><img src="https://img.shields.io/badge/judge-jev-E551BA?style=for-the-badge" alt="Jev"></a>
   <a href="https://openai.com"><img src="https://img.shields.io/badge/drafts-gpt--6--astra-000000?style=for-the-badge" alt="gpt-6-astra"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=for-the-badge" alt="MIT License"></a>
 </p>
 <p>
   <a href="#how-it-works">How it works</a> •
@@ -144,3 +145,7 @@ State survives restarts. Delete `data/state.json` or hit Reset to start over.
 ## Credits
 
 Built with [TypeSafe](https://typesafe.ai) (Jev) and OpenAI. Send icon from [Ionicons](https://ionic.io/ionicons). Layout inspired by the "Social Stockfish" demo that went around Twitter.
+
+## License
+
+[MIT](LICENSE)
